@@ -10,13 +10,13 @@ type Service interface {
 	ServiceById(task string) (*Task, error)
 }
 
-type DataService interface {
+type DataService struct {
 	Service
 }
 
 func (t *TaskService) ServiceAdd(task Task) error {
 	task.Status = StatusInProcess
-	err := t.Storage.AddTask(task.Id, task.Status)
+	err := t.Storage.AddTask(task.Id, task.Status, task.TitleTask)
 	if err != nil {
 		return err
 	}

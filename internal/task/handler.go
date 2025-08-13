@@ -13,48 +13,42 @@ type Handler struct {
 }
 
 func (h *Handler) HandlerAddTaks(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	task := Task{}
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
-		log := l.NewLog("Invalid data", err)
+		log := l.NewLog("Invalid data", err.Error())
 		h.Logchan <- log
 		http.Error(w, "Invalid data", http.StatusBadRequest)
 		return
 	}
 	_, err = strconv.Atoi(task.Id)
 	if err != nil {
-		log := l.NewLog("Invalid id task", err)
+		log := l.NewLog("Invalid id task", err.Error())
 		h.Logchan <- log
 		http.Error(w, "Invalid data", http.StatusBadRequest)
 		return
 	}
 	err = h.DataService.ServiceAdd(task)
 	if err != nil {
-		log := l.NewLog("failed add new task", err)
+		log := l.NewLog("failed add new task", err.Error())
 		h.Logchan <- log
-		http.Error(w, "Server Error", http.StatusInternalServerError)
+		http.Error(w, "already exist", http.StatusInternalServerError)
 		return
 	}
+	log := l.NewLog("Task added", "")
+	h.Logchan <- log
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Task added"))
 }
 
 func (h *Handler) HandlerTakeTasks(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	res := h.DataService.ServiceTakeAll()
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err := json.NewEncoder(w).Encode(res)
 	if err != nil {
-		log := l.NewLog(somewrong, err)
+		log := l.NewLog(somewrong, err.Error())
 		h.Logchan <- log
 		http.Error(w, "Server Error", http.StatusInternalServerError)
 		return
@@ -69,7 +63,7 @@ func (h *Handler) HandlerTaskByID(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	id := query.Get("id")
 	if id == "" {
-		log := l.NewLog("Invalid Query Params", nil)
+		log := l.NewLog("Invalid Query Params", "")
 		h.Logchan <- log
 		http.Error(w, "Invalid data", http.StatusBadRequest)
 		return
@@ -77,7 +71,7 @@ func (h *Handler) HandlerTaskByID(w http.ResponseWriter, r *http.Request) {
 
 	task, err := h.DataService.ServiceById(id)
 	if err != nil {
-		log := l.NewLog("Invalid ID", err)
+		log := l.NewLog("Invalid ID", err.Error())
 		h.Logchan <- log
 		http.Error(w, "Invalid data", http.StatusBadRequest)
 		return
@@ -86,7 +80,7 @@ func (h *Handler) HandlerTaskByID(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(task)
 	if err != nil {
-		log := l.NewLog(somewrong, err)
+		log := l.NewLog(somewrong, err.Error())
 		h.Logchan <- log
 		http.Error(w, "Server Error", http.StatusInternalServerError)
 		return
